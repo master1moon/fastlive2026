@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>استراحة فاست لينك | البث المباشر</title>
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #e74c3c;
+            --primary-dark: #c0392b;
+            --bg: #0a0a0a;
+        }
+
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, 'Cairo', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #ffd700;
+        }
+
+        .live-badge {
+            background: rgba(0,0,0,0.6);
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1280px;
+            margin: 15px auto;
+            padding: 0 15px;
+        }
+
+        /* Video Wrapper - الحل الأساسي لمشكلة الشاشة الكاملة */
+        .video-wrapper {
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+        }
+
+        /* الفيديو نفسه - يمتد لملء الشاشة عند التكبير */
+        .video-js {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+        }
+
+        /* عند تفعيل وضع الشاشة الكاملة، الفيديو يملأ الشاشة بالكامل */
+        .video-js.vjs-fullscreen {
+            aspect-ratio: auto !important;
+        }
+
+        .video-js.vjs-fullscreen .vjs-tech {
+            object-fit: contain !important;
+        }
+
+        /* Channel Info */
+        .channel-info {
+            padding: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 1px solid #222;
+            margin-top: 10px;
+        }
+
+        .channel-name {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .channel-desc {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header {
+                padding: 10px 15px;
+            }
+            .logo {
+                font-size: 1rem;
+            }
+            .channel-info {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            🎬 <span>استراحة</span> فاست لينك
+        </div>
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            <span>مباشر</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="video-wrapper">
+            <video id="stream-player" class="video-js vjs-big-play-centered" controls preload="auto" poster="waiting.jpg">
+                <source src="/tmp_hls/stream/index.m3u8" type="application/x-mpegURL">
+            </video>
+        </div>
+
+        <div class="channel-info">
+            <div>
+                <div class="channel-name">📺 Fastlink TV</div>
+                <div class="channel-desc">بث مباشر حصري</div>
+            </div>
+            <div class="channel-desc">
+                جودة HD | تشغيل سلس
+            </div>
+        </div>
+    </div>
+
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+    
+    <script>
+        // إعدادات المشغل الأساسية (بدون زر تسريع الفيديو)
+        let player;
+        let reconnectAttempts = 0;
+        let maxAttempts = 8;
+        
+        player = videojs('stream-player', {
+            autoplay: true,
+            muted: false,
+            fluid: true,
+            controls: true,
+            // إزالة زر تسريع الفيديو لأنه لا يفيد في البث المباشر
+            playbackRates: [],
+            controlBar: {
+                children: [
+                    'playToggle',
+                    'volumePanel',
+                    'currentTimeDisplay',
+                    'timeDivider',
+                    'durationDisplay',
+                    'progressControl',
+                    'liveDisplay',
+                    'fullscreenToggle'  // زر الشاشة الكاملة فقط
+                ]
+            }
+        });
+        
+        // إعادة الاتصال التلقائي عند انقطاع البث
+        player.on('error', function() {
+            if (reconnectAttempts < maxAttempts) {
+                reconnectAttempts++;
+                const delay = Math.min(3000 * reconnectAttempts, 20000);
+                console.log(`محاولة إعادة الاتصال ${reconnectAttempts}/${maxAttempts}`);
+                
+                setTimeout(() => {
+                    player.src({ src: "/tmp_hls/stream/index.m3u8", type: 'application/x-mpegURL' });
+                    player.load();
+                    player.play();
+                }, delay);
+            }
+        });
+        
+        player.on('playing', function() {
+            reconnectAttempts = 0;
+            console.log('البث يعمل');
+        });
+        
+        // إصلاح مشكلة الشاشة الكاملة في الهواتف
+        // التأكد من أن الفيديو يملأ الشاشة بالكامل عند التكبير
+        player.on('fullscreenchange', function() {
+            if (player.isFullscreen()) {
+                // عند الدخول في وضع الشاشة الكاملة
+                document.documentElement.style.overflow = 'hidden';
+                // توجيه الشاشة إلى الوضع الأفقي
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(function(e) {
+                        console.log('تعذر قفل اتجاه الشاشة:', e);
+                    });
+                }
+            } else {
+                // عند الخروج من وضع الشاشة الكاملة
+                document.documentElement.style.overflow = '';
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            }
+        });
+        
+        // اختصارات لوحة المفاتيح
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                player.paused() ? player.play() : player.pause();
+            } else if (e.code === 'KeyF') {
+                e.preventDefault();
+                player.isFullscreen() ? player.exitFullscreen() : player.requestFullscreen();
+            } else if (e.code === 'KeyM') {
+                e.preventDefault();
+                player.muted(!player.muted());
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - إدارة البث المباشر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #0f172a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #334155;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #94a3b8;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: #3b82f6;
+        }
+        .stat-title {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+        .section {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #334155;
+        }
+        .section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3b82f6;
+            display: inline-block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            background: #0f172a;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        td {
+            color: #cbd5e1;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-live {
+            background: #22c55e20;
+            color: #4ade80;
+            border: 1px solid #22c55e;
+        }
+        .status-offline {
+            background: #ef444420;
+            color: #f87171;
+            border: 1px solid #ef4444;
+        }
+        .refresh-btn {
+            background: #3b82f6;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 15px;
+        }
+        .refresh-btn:hover {
+            background: #2563eb;
+        }
+        .control-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .control-btn {
+            background: #334155;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .control-btn:hover {
+            background: #475569;
+        }
+        .control-btn.danger {
+            background: #dc2626;
+        }
+        .control-btn.danger:hover {
+            background: #b91c1c;
+        }
+        .control-btn.success {
+            background: #16a34a;
+        }
+        .control-btn.success:hover {
+            background: #15803d;
+        }
+        .log-area {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #334155;
+            color: #94a3b8;
+        }
+        .log-entry time {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ لوحة تحكم البث المباشر</h1>
+            <p>إدارة وإحصائيات متقدمة لنظام البث المحلي</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">📺 حالة البث</div>
+                <div class="stat-value" id="streamStatus">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">👥 عدد المشاهدين الحالي</div>
+                <div class="stat-value" id="viewerCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">📊 إجمالي الزوار اليوم</div>
+                <div class="stat-value" id="totalViews">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">⏱️ وقت تشغيل الخادم</div>
+                <div class="stat-value" id="uptime">-</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎬 معلومات البث الحي</h2>
+            <button class="refresh-btn" onclick="refreshData()">🔄 تحديث البيانات</button>
+            <table id="streamsTable">
+                <thead>
+                    <tr><th>اسم البث</th><th>الحالة</th><th>المشاهدين</th><th>الدقة</th><th>معدل البت</th></tr>
+                </thead>
+                <tbody id="streamsBody">
+                    <tr><td colspan="5" style="text-align: center;">جاري التحميل...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>📝 سجل الأحداث</h2>
+            <div class="log-area" id="logArea">
+                <div class="log-entry">تم تحميل لوحة التحكم</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STATS_URL = '/stat';
+        
+        function addLog(message) {
+            const logArea = document.getElementById('logArea');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ar-EG');
+            logEntry.innerHTML = `<time>[${timeStr}]</time> ${message}`;
+            logArea.insertBefore(logEntry, logArea.firstChild);
+            if (logArea.children.length > 50) {
+                logArea.removeChild(logArea.lastChild);
+            }
+        }
+        
+        async function fetchStats() {
+            try {
+                const response = await fetch(STATS_URL);
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, 'text/xml');
+                
+                // استخراج معلومات الخادم
+                const server = xmlDoc.getElementsByTagName('server')[0];
+                if (server) {
+                    const uptime = server.getAttribute('uptime');
+                    if (uptime) {
+                        const uptimeSec = parseInt(uptime);
+                        const hours = Math.floor(uptimeSec / 3600);
+                        const minutes = Math.floor((uptimeSec % 3600) / 60);
+                        document.getElementById('uptime').innerHTML = `${hours} ساعة ${minutes} دقيقة`;
+                    }
+                }
+                
+                // استخراج معلومات البث
+                const liveApps = xmlDoc.getElementsByTagName('live');
+                let hasStream = false;
+                let totalViewers = 0;
+                
+                const streamsBody = document.getElementById('streamsBody');
+                streamsBody.innerHTML = '';
+                
+                for (let app of liveApps) {
+                    const streams = app.getElementsByTagName('stream');
+                    for (let stream of streams) {
+                        const name = stream.getAttribute('name');
+                        const nclients = parseInt(stream.getAttribute('nclients')) || 0;
+                        const bw_video = parseInt(stream.getAttribute('bw_video')) || 0;
+                        const bw_audio = parseInt(stream.getAttribute('bw_audio')) || 0;
+                        const totalBW = bw_video + bw_audio;
+                        
+                        totalViewers += nclients;
+                        hasStream = true;
+                        
+                        const row = streamsBody.insertRow();
+                        row.insertCell(0).innerHTML = name || 'main';
+                        row.insertCell(1).innerHTML = '<span class="status-badge status-live">🟢 حي</span>';
+                        row.insertCell(2).innerHTML = nclients;
+                        row.insertCell(3).innerHTML = getResolutionFromBandwidth(totalBW);
+                        row.insertCell(4).innerHTML = formatBitrate(totalBW);
+                    }
+                }
+                
+                if (!hasStream) {
+                    streamsBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">🔴 لا يوجد بث حي حالياً</td></tr>';
+                    document.getElementById('streamStatus').innerHTML = '<span class="status-badge status-offline">🔴 متوقف</span>';
+                } else {
+                    document.getElementById('streamStatus').innerHTML = '<span class="status-badge status-live">🟢 يعمل</span>';
+                }
+                
+                document.getElementById('viewerCount').innerHTML = totalViewers;
+                
+                // تخزين إجمالي الزوار في localStorage
+                let totalViews = localStorage.getItem('totalViews');
+                if (!totalViews) {
+                    totalViews = 0;
+                }
+                if (hasStream && totalViewers > 0) {
+                    totalViews = parseInt(totalViews) + totalViewers;
+                    localStorage.setItem('totalViews', totalViews);
+                }
+                document.getElementById('totalViews').innerHTML = totalViews;
+                
+                addLog(`تم تحديث الإحصائيات - ${hasStream ? 'بث حي نشط' : 'لا يوجد بث حي'} - ${totalViewers} مشاهد`);
+                
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+                addLog('⚠️ خطأ في جلب الإحصائيات');
+            }
+        }
+        
+        function getResolutionFromBandwidth(bandwidthKbps) {
+            if (bandwidthKbps > 2000) return '720p';
+            if (bandwidthKbps > 1000) return '480p';
+            if (bandwidthKbps > 500) return '360p';
+            return '240p';
+        }
+        
+        function formatBitrate(bitrateKbps) {
+            if (bitrateKbps > 1000) {
+                return (bitrateKbps / 1000).toFixed(1) + ' Mbps';
+            }
+            return bitrateKbps + ' Kbps';
+        }
+        
+        async function refreshData() {
+            addLog('🔄 جاري تحديث البيانات...');
+            await fetchStats();
+        }
+        
+        // تحديث تلقائي كل 10 ثواني
+        fetchStats();
+        setInterval(fetchStats, 10000);
+    </script>
+</body>
+</html>
